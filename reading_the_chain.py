@@ -18,17 +18,19 @@ def connect_to_eth():
 
 def connect_with_middleware(contract_json):
     with open(contract_json, 'r') as f:
-        contract_data = json.load(f)
+        try:
+            contract_data = json.load(f)
+        except Exception as e:
+            raise ValueError(f"Error reading contract JSON: {e}")
 
-    # Automatically detect whether it's a raw ABI array or wrapped in "abi"
+    
     if isinstance(contract_data, list):
         abi = contract_data
     elif isinstance(contract_data, dict) and "abi" in contract_data:
         abi = contract_data["abi"]
     else:
-        raise ValueError("ABI not found or improperly formatted")
+        raise ValueError("ABI format not supported in contract_info.json")
 
-    # Connect to BNB testnet
     bnb_url = "https://data-seed-prebsc-1-s1.binance.org:8545/"
     w3 = Web3(HTTPProvider(bnb_url))
     w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
@@ -37,7 +39,7 @@ def connect_with_middleware(contract_json):
     contract = w3.eth.contract(address=contract_address, abi=abi)
 
     return w3, contract
-
+	
 def is_ordered_block(w3, block_num):
     """
     Takes a block number
