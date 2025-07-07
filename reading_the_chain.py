@@ -11,9 +11,8 @@ from web3.providers.rpc import HTTPProvider
 # infura_url = f"https://mainnet.infura.io/v3/{infura_token}"
 
 def connect_to_eth():
-    infura_token = "your_infura_token_here"
-    infura_url = f"https://mainnet.infura.io/v3/{infura_token}"
-    w3 = Web3(HTTPProvider(infura_url))
+    alchemy_url = "https://eth-mainnet.g.alchemy.com/v2/QgeJ73SopS_ON9aJ1P8EXHMXMxuUBJji"
+    w3 = Web3(HTTPProvider(alchemy_url))
     return w3
 
 
