@@ -17,28 +17,30 @@ def connect_to_eth():
 
 
 def connect_with_middleware(contract_json):
-    with open(contract_json, 'r') as f:
-        try:
-            contract_data = json.load(f)
-        except Exception as e:
-            raise ValueError(f"Error reading contract JSON: {e}")
-
-    
-    if isinstance(contract_data, list):
-        abi = contract_data
-    elif isinstance(contract_data, dict) and "abi" in contract_data:
-        abi = contract_data["abi"]
-    else:
-        raise ValueError("ABI format not supported in contract_info.json")
-
-    bnb_url = "https://data-seed-prebsc-1-s1.binance.org:8545/"
-    w3 = Web3(HTTPProvider(bnb_url))
-    w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-
-    contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
-    contract = w3.eth.contract(address=contract_address, abi=abi)
-
-    return w3, contract
+    try:
+        with open(contract_json, "r") as f:
+            contract_info = json.load(f)
+        
+        # Add validation for required fields
+        if "abi" not in contract_info:
+            raise ValueError("ABI missing in contract info")
+            
+        w3 = Web3(Web3.HTTPProvider("https://data-seed-prebsc-1-s1.binance.org:8545/"))
+        w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+        
+        contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
+        contract = w3.eth.contract(address=contract_address, abi=contract_info["abi"])
+        return w3, contract
+        
+    except FileNotFoundError:
+        print(f"Error: {contract_json} file not found in working directory")
+        raise
+    except json.JSONDecodeError:
+        print(f"Error: {contract_json} contains invalid JSON")
+        raise
+    except Exception as e:
+        print(f"Error connecting to contract: {str(e)}")
+        raise
 	
 def is_ordered_block(w3, block_num):
     """
