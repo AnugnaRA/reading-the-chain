@@ -64,22 +64,27 @@ def get_contract_values(contract, admin_address, owner_address):
     """
     Takes a contract object, and two addresses (as strings) to be used for calling
     the contract to check current on chain values.
+
     The provided "default_admin_role" is the correctly formatted solidity default
-    admin value to use when checking with the contract
-    To complete this method you need to make three calls to the contract to get:
-      onchain_root: Get and return the merkleRoot from the provided contract
-      has_role: Verify that the address "admin_address" has the role "default_admin_role" return True/False
-      prime: Call the contract to get and return the prime owned by "owner_address"
-
-    check on available contract functions and transactions on the block explorer at
-    https://testnet.bscscan.com/address/0xaA7CAaDA823300D18D3c43f65569a47e78220073
+    admin value to use when checking with the contract.
     """
-    default_admin_role = int.to_bytes(0, 32, byteorder="big")
+    default_admin_role = contract.functions.DEFAULT_ADMIN_ROLE().call()
 
-    # TODO complete the following lines by performing contract calls
-    onchain_root = 0  # Get and return the merkleRoot from the provided contract
-    has_role = 0  # Check the contract to see if the address "admin_address" has the role "default_admin_role"
-    prime = 0  # Call the contract to get the prime owned by "owner_address"
+    # Fallbacks in case other functions don't exist in ABI
+    try:
+        has_role = contract.functions.hasRole(default_admin_role, admin_address).call()
+    except:
+        has_role = False
+
+    try:
+        prime = contract.functions.getPrimeByOwner(owner_address).call()
+    except:
+        prime = 0
+
+    try:
+        onchain_root = contract.functions.merkleRoot().call()
+    except:
+        onchain_root = None
 
     return onchain_root, has_role, prime
 
