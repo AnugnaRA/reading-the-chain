@@ -17,16 +17,32 @@ def connect_to_eth():
 
 
 def connect_with_middleware(contract_json):
-    with open(contract_json, "r") as f:
-        contract_info = json.load(f)
+    import os
+    import json
 
+    # Check if file exists and load JSON safely
+    if not os.path.exists(contract_json):
+        raise FileNotFoundError(f"File {contract_json} not found")
+
+    with open(contract_json, "r") as f:
+        try:
+            contract_info = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in {contract_json}: {e}")
+
+    if "abi" not in contract_info:
+        raise KeyError("ABI key missing from contract_info.json")
+
+    contract_abi = contract_info["abi"]
+
+    # Set up connection to BNB testnet
     w3 = Web3(Web3.HTTPProvider("https://data-seed-prebsc-1-s1.binance.org:8545/"))
     w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
-    # Hardcoded address from instructions
+    # Hardcoded contract address from instructions
     contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
-    contract_abi = contract_info["abi"]
 
+    # Create the contract object using ABI and address
     contract = w3.eth.contract(address=contract_address, abi=contract_abi)
     return w3, contract
 
