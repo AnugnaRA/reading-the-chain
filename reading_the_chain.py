@@ -20,15 +20,16 @@ def connect_with_middleware(contract_json):
     with open(contract_json, 'r') as f:
         contract_data = json.load(f)
 
-    #Detect whether the file is a raw ABI array or a wrapper with {"abi": [...]}
+    # Automatically detect whether it's a raw ABI array or wrapped in "abi"
     if isinstance(contract_data, list):
         abi = contract_data
     elif isinstance(contract_data, dict) and "abi" in contract_data:
         abi = contract_data["abi"]
     else:
-        raise ValueError("ABI key missing from contract_info.json")
+        raise ValueError("ABI not found or improperly formatted")
 
-    bnb_url = "https://data-seed-prebsc-1-s1.binance.org:8545/"  # or your own BNB testnet URL
+    # Connect to BNB testnet
+    bnb_url = "https://data-seed-prebsc-1-s1.binance.org:8545/"
     w3 = Web3(HTTPProvider(bnb_url))
     w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
