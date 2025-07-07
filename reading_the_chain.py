@@ -14,36 +14,41 @@ def connect_to_eth():
     alchemy_url = "https://eth-mainnet.g.alchemy.com/v2/QgeJ73SopS_ON9aJ1P8EXHMXMxuUBJji"
     w3 = Web3(HTTPProvider(alchemy_url))
     return w3
-	
-print("File structure keys:", contract_info.keys())
-if "contracts" in contract_info:
-    print("Contracts keys:", contract_info["contracts"].keys())
 
 def connect_with_middleware(contract_json):
     try:
-        # Load the contract info file
-        with open(contract_json, "r") as f:
-            contract_info = json.load(f)
-        
-        # Extract ABI using the exact structure from the provided file
-        contract_abi = contract_info["contracts"]["contracts/MerkleValidator.sol:MerkleValidator"]["abi"]
-        
-        # Set up Web3 connection
+        # 1. First verify the file exists and is readable
+        try:
+            with open(contract_json, "r") as f:
+                contract_info = json.load(f)
+        except FileNotFoundError:
+            print(f"Error: {contract_json} file not found in directory {os.getcwd()}")
+            print(f"Directory contents: {os.listdir()}")
+            raise
+        except json.JSONDecodeError:
+            print(f"Error: {contract_json} contains invalid JSON")
+            raise
+            
+        # 2. Extract ABI using the exact structure from the provided file
+        try:
+            contract_abi = contract_info["contracts"]["contracts/MerkleValidator.sol:MerkleValidator"]["abi"]
+        except KeyError as e:
+            print(f"Error: Missing expected key in contract info - {str(e)}")
+            print("File structure:", json.dumps(contract_info, indent=2))
+            raise
+            
+        # 3. Set up Web3 connection
         w3 = Web3(Web3.HTTPProvider("https://data-seed-prebsc-1-s1.binance.org:8545/"))
         w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
         
-        # Create contract instance
+        # 4. Create contract instance
         contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
         contract = w3.eth.contract(address=contract_address, abi=contract_abi)
         
         return w3, contract
         
-    except KeyError as e:
-        print(f"Error: Could not find expected key in contract info - {str(e)}")
-        print("Please verify the contract_info.json file matches the expected structure")
-        raise
     except Exception as e:
-        print(f"Error connecting to contract: {str(e)}")
+        print(f"Failed to connect: {type(e).__name__}: {str(e)}")
         raise
 	
 def is_ordered_block(w3, block_num):
