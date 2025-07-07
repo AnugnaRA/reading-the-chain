@@ -17,30 +17,18 @@ def connect_to_eth():
 
 
 def connect_with_middleware(contract_json):
-    try:
-        with open(contract_json, "r") as f:
-            contract_info = json.load(f)
-        
-        # Add validation for required fields
-        if "abi" not in contract_info:
-            raise ValueError("ABI missing in contract info")
-            
-        w3 = Web3(Web3.HTTPProvider("https://data-seed-prebsc-1-s1.binance.org:8545/"))
-        w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
-        
-        contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
-        contract = w3.eth.contract(address=contract_address, abi=contract_info["abi"])
-        return w3, contract
-        
-    except FileNotFoundError:
-        print(f"Error: {contract_json} file not found in working directory")
-        raise
-    except json.JSONDecodeError:
-        print(f"Error: {contract_json} contains invalid JSON")
-        raise
-    except Exception as e:
-        print(f"Error connecting to contract: {str(e)}")
-        raise
+    with open(contract_json, "r") as f:
+        contract_info = json.load(f)
+    
+    # Exact path to ABI based on the GitHub file structure
+    contract_abi = contract_info["contracts"]["contracts/MerkleValidator.sol:MerkleValidator"]["abi"]
+    
+    w3 = Web3(Web3.HTTPProvider("https://data-seed-prebsc-1-s1.binance.org:8545/"))
+    w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
+    
+    contract_address = Web3.to_checksum_address("0xaA7CAaDA823300D18D3c43f65569a47e78220073")
+    contract = w3.eth.contract(address=contract_address, abi=contract_abi)
+    return w3, contract
 	
 def is_ordered_block(w3, block_num):
     """
